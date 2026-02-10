@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Тест: Шкала энергии человека</title>
+  <style>
+    :root { --gap: 12px; --radius: 14px; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #0b0f17; color: #e9eefc; }
+    header { padding: 22px 16px; border-bottom: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02); position: sticky; top: 0; backdrop-filter: blur(8px); }
+    h1 { margin: 0 0 6px; font-size: 18px; }
+    .sub { opacity: .8; font-size: 13px; line-height: 1.35; }
+    main { max-width: 980px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+    .card { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: var(--radius); padding: 14px; }
+    .row { display: flex; gap: var(--gap); flex-wrap: wrap; align-items: center; }
+    .pill { padding: 6px 10px; border: 1px solid rgba(255,255,255,.10); border-radius: 999px; font-size: 12px; opacity: .9; }
+    .btn { cursor: pointer; background: #2b63ff; border: 0; color: #fff; padding: 10px 12px; border-radius: 10px; font-weight: 600; }
+    .btn.secondary { background: rgba(255,255,255,.08); }
+    .btn:active { transform: translateY(1px); }
+    .section-title { margin: 0 0 8px; font-size: 14px; font-weight: 700; opacity: .95; }
+    .note { font-size: 12px; opacity: .8; line-height: 1.4; }
+    .q { padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02); display: grid; gap: 10px; }
+    .qhead { display: flex; gap: 10px; align-items: flex-start; }
+    .qnum { min-width: 34px; height: 26px; display: inline-flex; align-items: center; justify-content: center;
+            border-radius: 10px; background: rgba(255,255,255,.08); font-size: 12px; font-weight: 700; }
+    .qtext { font-size: 14px; line-height: 1.35; }
+    .answers { display: flex; gap: 10px; }
+    .toggle { display: inline-flex; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 12px;
+              border: 1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.02); cursor: pointer; user-select: none; }
+    .toggle input { accent-color: #2b63ff; width: 18px; height: 18px; }
+    .grid { display: grid; gap: 10px; }
+    .two { grid-template-columns: 1fr; }
+    @media (min-width: 860px) { .two { grid-template-columns: 1fr 1fr; } }
+    .result h2 { margin: 0 0 10px; font-size: 16px; }
+    .big { font-size: 28px; font-weight: 800; margin: 0; }
+    .muted { opacity: .8; }
+    .barWrap { width: 100%; height: 10px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; }
+    .bar { height: 100%; width: 0%; background: #2b63ff; }
+    .bar.red { background: #ff3b3b; }
+    .badge { display: inline-flex; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.12); font-size: 12px; }
+    .ok { color: #9dffb7; border-color: rgba(157,255,183,.35); background: rgba(157,255,183,.08); }
+    .warn { color: #ffd59d; border-color: rgba(255,213,157,.35); background: rgba(255,213,157,.08); }
+    .bad { color: #ff9d9d; border-color: rgba(255,157,157,.35); background: rgba(255,157,157,.08); }
+    .kpi { display: grid; gap: 10px; }
+    .kpiRow { display: grid; gap: 6px; }
+    .footer { font-size: 12px; opacity: .7; padding: 10px 0 18px; }
+    .stickyActions { position: sticky; bottom: 10px; display: flex; gap: 10px; justify-content: flex-end; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Тест: Шкала энергии человека (две шкалы)</h1>
+  <div class="sub">
+    Ответь <b>ДА/НЕТ</b>. Сайт посчитает две шкалы: <b>Утечки (U)</b> и <b>Энергия (E)</b>, затем выдаст итог по матрице (что происходит с человеком).
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <div class="row">
+      <span class="pill"><b>U</b> (1–55): «ДА» = утечка энергии</span>
+      <span class="pill"><b>E</b> (56–100): «ДА» = наличие энергии</span>
+      <span class="pill">Пороги: U низкие 0–20, высокие 21–55; E низкая 0–22, высокая 23–45</span>
+    </div>
+    <div class="note" style="margin-top:10px;">
+      ⚠️ Важно: мы не складываем U и E в одну цифру. Итог — это <b>соотношение</b>: сколько ресурса и сколько утечек.
+    </div>
+  </section>
+
+  <section class="card result" id="resultCard" aria-live="polite">
+    <h2>Результат</h2>
+    <div class="two grid">
+      <div class="card kpi">
+        <div class="kpiRow">
+          <div class="row" style="justify-content:space-between;">
+            <div><b>Утечки (U)</b> — вопросы 1–55</div>
+            <div class="badge" id="uBadge">—</div>
+          </div>
+          <p class="big" id="uScore">0 / 55</p>
+          <div class="barWrap"><div class="bar red" id="uBar"></div></div>
+          <div class="muted" id="uText">Пока нет данных.</div>
+        </div>
+      </div>
+
+      <div class="card kpi">
+        <div class="kpiRow">
+          <div class="row" style="justify-content:space-between;">
+            <div><b>Энергия (E)</b> — вопросы 56–100</div>
+            <div class="badge" id="eBadge">—</div>
+          </div>
+          <p class="big" id="eScore">0 / 45</p>
+          <div class="barWrap"><div class="bar" id="eBar"></div></div>
+          <div class="muted" id="eText">Пока нет данных.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <div class="row" style="justify-content:space-between; gap: 10px;">
+        <div>
+          <div class="section-title">Итоговое состояние</div>
+          <div class="big" id="stateTitle">—</div>
+          <div class="muted" id="stateSubtitle">Заполни тест и нажми «Посчитать».</div>
+        </div>
+        <div class="row">
+          <button class="btn" id="calcBtn">Посчитать</button>
+          <button class="btn secondary" id="resetBtn">Сброс</button>
+        </div>
+      </div>
+      <div style="margin-top:10px; line-height:1.5;" id="stateExplain"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-title">Часть I — Шкала утечек (1–55)</div>
+    <div class="note">Отметь «ДА», если утверждение про тебя сейчас. Каждое «ДА» добавляет 1 балл в утечки.</div>
+    <div class="grid" id="leakList" style="margin-top:10px;"></div>
+  </section>
+
+  <section class="card">
+    <div class="section-title">Часть II — Шкала энергии (56–100)</div>
+    <div class="note">Отметь «ДА», если утверждение про тебя сейчас. Каждое «ДА» добавляет 1 балл в энергию.</div>
+    <div class="grid" id="energyList" style="margin-top:10px;"></div>
+
+    <div class="stickyActions">
+      <button class="btn" id="calcBtn2">Посчитать</button>
+      <button class="btn secondary" id="scrollTopBtn">Наверх</button>
+    </div>
+  </section>
+
+  <div class="footer">
+    Версия 1.0 — логика «две шкалы» (U и E) + итог по матрице 2×2.
+  </div>
+</main>
+
+<script>
+  // --- DATA ---
+  const leakQuestions = [
+    "Мне сложно понять, чего я на самом деле хочу",
+    "В голове много мыслей, но нет ясности",
+    "Я часто перескакиваю с идеи на идею",
+    "Мне трудно принимать даже простые решения",
+    "Чувство растерянности — моё частое состояние",
+    "Я ощущаю внутренний шум и напряжение",
+    "Есть тревога без чёткой причины",
+    "Я начинаю дела и не довожу их до конца",
+    "Часто откладываю важное",
+    "Мне сложно выстроить режим",
+    "Я часто оправдываю поступки, которые сам считаю неправильными",
+    "Думаю одно, а делаю другое",
+    "Есть ощущение, что я живу не своей жизнью",
+    "Я часто чувствую вину или стыд",
+    "Я злюсь на себя, но стараюсь этого не замечать",
+    "Есть ощущение внутренней фальши",
+    "Я иду на компромиссы с совестью",
+    "Я замалчиваю то, что важно",
+    "Я терплю то, что давно стоило изменить",
+    "Мир ко мне несправедлив",
+    "Люди чаще мешают, чем помогают",
+    "Мне кажется, что против меня играют",
+    "Раздражение — мой частый фон",
+    "Я часто чувствую злость или обиду",
+    "Мне сложно радоваться за других",
+    "Я часто вступаю в конфликты",
+    "Я критикую и обесцениваю",
+    "Я защищаюсь даже там, где можно расслабиться",
+    "Я много анализирую и мало действую",
+    "Мне нужны гарантии, прежде чем сделать шаг",
+    "Я боюсь ошибиться",
+    "Я часто переживаю о будущем",
+    "Мне сложно доверять своим решениям",
+    "Я ищу подтверждение у других",
+    "Я долго готовлюсь, но не начинаю",
+    "Я откладываю важные решения",
+    "Мне сложно сделать выбор",
+    "Я знаю, что нужно делать, но не делаю",
+    "Я нахожу причины не начинать",
+    "Мне сложно собраться",
+    "Я раздражаюсь на себя",
+    "Я часто чувствую усталость без причины",
+    "Есть внутреннее сопротивление действиям",
+    "Я прокрастинирую",
+    "Я саботирую собственные планы",
+    "Я ухожу в мелкие, неважные дела",
+    "Мне всё равно, что будет дальше",
+    "Я не чувствую смысла",
+    "День проходит на автомате",
+    "Я чувствую апатию",
+    "Я не чувствую радости",
+    "Мне сложно испытывать эмоции",
+    "Я избегаю инициативы",
+    "Я делаю только необходимое",
+    "Я избегаю ответственности",
+  ];
+
+  const energyQuestions = [
+    "Так, как раньше, больше нельзя",
+    "Я готов что-то менять",
+    "Я беру ответственность на себя",
+    "Я чувствую внутренний толчок",
+    "Во мне появилась решимость",
+    "Я ощущаю ясность",
+    "Я принимаю решения и действую",
+    "Я убираю лишнее из жизни",
+    "У меня есть дисциплина",
+    "Моя цель ясна",
+    "Я собран",
+    "Я способен удерживать фокус",
+    "Я спокоен под нагрузкой",
+    "У меня есть режим",
+    "Я регулярно работаю над собой",
+    "Я знаю, что и зачем делаю",
+    "Я доверяю процессу",
+    "Я устойчив эмоционально",
+    "Я довожу начатое до конца",
+    "Я последователен",
+    "Мне хватает",
+    "Я вижу возможности",
+    "Я чувствую поток",
+    "Я благодарен",
+    "Я чувствую лёгкость",
+    "Я рад жизни",
+    "Я делюсь с другими",
+    "Я создаю новое",
+    "Я помогаю без напряжения",
+    "Я чувствую, что всё на своём месте",
+    "Я доверяю Аллаху",
+    "Я на своём пути",
+    "Я нахожусь в глубоком покое",
+    "Во мне есть смирение",
+    "Я чувствую внутреннюю силу без напряжения",
+    "Я влияю спокойно",
+    "Люди тянутся ко мне",
+    "Моё присутствие создаёт ясность",
+    "Я чувствую бараку в жизни",
+    "Я живу в согласии с совестью",
+    "Я ощущаю смысл в том, что делаю",
+    "Я не борюсь с реальностью",
+    "Я принимаю то, что от Аллаха",
+    "Я живу в истикаме",
+    "Я ощущаю внутренний нур",
+  ];
+
+  // --- RENDER ---
+  function renderQuestions(containerId, questions, startIndex) {
+    const root = document.getElementById(containerId);
+    root.innerHTML = "";
+    questions.forEach((text, i) => {
+      const num = startIndex + i;
+      const id = ⁠ q${num} ⁠;
+      const wrap = document.createElement("div");
+      wrap.className = "q";
+      wrap.innerHTML = `
+        <div class="qhead">
+          <div class="qnum">${num}</div>
+          <div class="qtext">${escapeHtml(text)}</div>
+        </div>
+        <div class="answers" role="group" aria-label="Ответы">
+          <label class="toggle">
+            <input type="radio" name="${id}" value="yes" />
+            ДА
+          </label>
+          <label class="toggle">
+            <input type="radio" name="${id}" value="no" />
+            НЕТ
+          </label>
+        </div>
+      `;
+      root.appendChild(wrap);
+    });
+  }
+
+  function escapeHtml(s) {
+    return s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  }
+
+  renderQuestions("leakList", leakQuestions, 1);
+  renderQuestions("energyList", energyQuestions, 56);
+
+  // --- SCORING ---
+  function getAnswer(num) {
+    const group = document.querySelector(⁠ input[name="q${num}"]:checked ⁠);
+    return group ? group.value : null;
+  }
+
+  function score() {
+    let U = 0, E = 0;
+    let unanswered = [];
+
+    // U: 1..55
+    for (let n = 1; n <= 55; n++) {
+      const a = getAnswer(n);
+      if (!a) { unanswered.push(n); continue; }
+      if (a === "yes") U += 1;
+    }
+    // E: 56..100
+    for (let n = 56; n <= 100; n++) {
+      const a = getAnswer(n);
+      if (!a) { unanswered.push(n); continue; }
+      if (a === "yes") E += 1;
+    }
+
+    return { U, E, unanswered };
+  }
+
+  function bucketU(U){
+    if (U <= 10) return { label:"минимальные", cls:"ok", text:"Утечки минимальны. Энергия почти не «дырявится»." };
+    if (U <= 25) return { label:"умеренные", cls:"warn", text:"Есть утечки. Энергия уходит на внутренние трения и сопротивление." };
+    if (U <= 40) return { label:"сильные", cls:"warn", text:"Сильные утечки. Даже хороший ресурс может быстро сгорать." };
+    return { label:"критические", cls:"bad", text:"Критическое истощение/конфликт. Приоритет — убрать утечки." };
+  }
+
+  function bucketE(E){
+    if (E <= 10) return { label:"низкая", cls:"bad", text:"Энергии мало. Нужны восстановление и простые стабильные шаги." };
+    if (E <= 20) return { label:"нестабильная", cls:"warn", text:"Энергия есть, но скачет. Важны режим и фокус." };
+    if (E <= 30) return { label:"здоровая", cls:"ok", text:"Хороший уровень энергии. Есть ресурс для роста." };
+    return { label:"высокая / нур", cls:"ok", text:"Высокая энергия и ясность. Состояние силы." };
+  }
+
+  // Matrix thresholds (fixed)
+  const U_HIGH = 21; // 0-20 low, 21-55 high
+  const E_HIGH = 23; // 0-22 low, 23-45 high
+
+  function matrixState(U,E){
+    const uHigh = U >= U_HIGH;
+    const eHigh = E >= E_HIGH;
+
+    // 4 quadrants
+    if (uHigh && !eHigh) {
+      return {
+        title: "ИСТОЩЕНИЕ",
+        subtitle: "Высокие утечки + низкая энергия",
+        badgeCls: "bad",
+        explain: `
+          <p><b>Что происходит:</b> ресурс почти отсутствует, утечки сжигают остатки энергии. Часто это смесь апатии/тревоги/перегруза.</p>
+          <p><b>Главная задача:</b> не «мотивировать», а <b>восстановиться</b> и <b>снизить утечки</b>.</p>
+          <p><b>Первый шаг:</b> сон/режим/питание + убрать 1–2 главные утечки (конфликт, лишние обязательства, хаос).</p>
+        `
+      };
+    }
+    if (uHigh && eHigh) {
+      return {
+        title: "СКРЫТЫЙ КОНФЛИКТ",
+        subtitle: "Высокие утечки + высокая энергия",
+        badgeCls: "warn",
+        explain: `
+          <p><b>Что происходит:</b> энергия есть, но она <b>сгорает</b>. Человек может быть продуктивным, но без внутреннего покоя — раздражение, напряжение, риск резкого «падения».</p>
+          <p><b>Главная задача:</b> не добавлять нагрузку, а <b>убрать 1–3 ключевые утечки</b> (то, что постоянно жрёт силы).</p>
+          <p><b>Первый шаг:</b> найти «ядро утечек»: где вы живёте против совести/смысла/реальности, где держите лишнюю борьбу. Затем — точечная коррекция.</p>
+        `
+      };
+    }
+    if (!uHigh && !eHigh) {
+      return {
+        title: "СПЯЩИЙ ПОТЕНЦИАЛ",
+        subtitle: "Низкие утечки + низкая энергия",
+        badgeCls: "warn",
+        explain: `
+          <p><b>Что происходит:</b> утечки небольшие (это хорошо), но энергии пока мало. Часто это «ровное» состояние без драйва.</p>
+          <p><b>Главная задача:</b> мягко <b>активировать энергию</b>: цель, смысл, движение, дисциплина.</p>
+          <p><b>Первый шаг:</b> 1 маленькая цель на 7 дней + ежедневный ритуал (сон/шаги/намаз/фокус-блок).</p>
+        `
+      };
+    }
+    // !uHigh && eHigh
+    return {
+      title: "СИЛА И БАРАКА",
+      subtitle: "Низкие утечки + высокая энергия",
+      badgeCls: "ok",
+      explain: `
+        <p><b>Что происходит:</b> энергия течёт устойчиво, утечки под контролем. Действия дают результат без надрыва.</p>
+        <p><b>Главная задача:</b> сохранять истикаму: режим, намерение, простые регулярные действия.</p>
+        <p><b>Первый шаг:</b> закрепить систему (сон/питание/спорт/духовная практика) и масштабировать проекты без суеты.</p>
+      `
+    };
+  }
+
+  function setBadge(el, cls, text){
+    el.className = ⁠ badge ${cls} ⁠;
+    el.textContent = text;
+  }
+
+  function updateUI() {
+    const { U, E, unanswered } = score();
+
+    // If unanswered, still show partial but warn
+    const uPct = Math.round((U / 55) * 100);
+    const ePct = Math.round((E / 45) * 100);
+
+    document.getElementById("uScore").textContent = ⁠ ${U} / 55 ⁠;
+    document.getElementById("eScore").textContent = ⁠ ${E} / 45 ⁠;
+    document.getElementById("uBar").style.width = ⁠ ${uPct}% ⁠;
+    document.getElementById("eBar").style.width = ⁠ ${ePct}% ⁠;
+
+    const uB = bucketU(U);
+    const eB = bucketE(E);
+
+    setBadge(document.getElementById("uBadge"), uB.cls, ⁠ U: ${uB.label} ⁠);
+    setBadge(document.getElementById("eBadge"), eB.cls, ⁠ E: ${eB.label} ⁠);
+
+    document.getElementById("uText").textContent = uB.text;
+    document.getElementById("eText").textContent = eB.text;
+
+    const state = matrixState(U,E);
+    document.getElementById("stateTitle").textContent = state.title;
+    document.getElementById("stateSubtitle").textContent = state.subtitle + (unanswered.length ? ` • не отвечено: ${unanswered.length}` : "");
+    document.getElementById("stateExplain").innerHTML =
+      (unanswered.length
+        ? ⁠ <div class="note" style="margin-bottom:10px;">Не отвечены вопросы: ${unanswered.slice(0,20).join(", ")}${unanswered.length>20?"…":""}. Результат будет точнее, если ответить на все.</div> ⁠
+        : ""
+      ) + state.explain;
+
+    // Scroll to result
+    document.getElementById("resultCard").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function resetAll() {
+    document.querySelectorAll('input[type="radio"]').forEach(i => i.checked = false);
+    // reset result UI
+    document.getElementById("uScore").textContent = "0 / 55";
+    document.getElementById("eScore").textContent = "0 / 45";
+    document.getElementById("uBar").style.width = "0%";
+    document.getElementById("eBar").style.width = "0%";
+    document.getElementById("uText").textContent = "Пока нет данных.";
+    document.getElementById("eText").textContent = "Пока нет данных.";
+    document.getElementById("stateTitle").textContent = "—";
+    document.getElementById("stateSubtitle").textContent = "Заполни тест и нажми «Посчитать».";
+    document.getElementById("stateExplain").innerHTML = "";
+    document.getElementById("uBadge").className = "badge"; document.getElementById("uBadge").textContent = "—";
+    document.getElementById("eBadge").className = "badge"; document.getElementById("eBadge").textContent = "—";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  document.getElementById("calcBtn").addEventListener("click", updateUI);
+  document.getElementById("calcBtn2").addEventListener("click", updateUI);
+  document.getElementById("resetBtn").addEventListener("click", resetAll);
+  document.getElementById("scrollTopBtn").addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+</script>
+</body>
+</html>
